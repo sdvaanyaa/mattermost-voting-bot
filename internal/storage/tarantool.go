@@ -12,7 +12,7 @@ type Storage struct {
 	conn *tarantool.Connection
 }
 
-func NewStorage(cfg config.Config) (*Storage, error) {
+func New(cfg *config.Config) (*Storage, error) {
 	const op = "storage.NewStorage"
 
 	dialer := tarantool.NetDialer{

@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/sdvaanyaa/mattermost-voting-bot/internal/bot"
 	"github.com/sdvaanyaa/mattermost-voting-bot/internal/config"
+	"github.com/sdvaanyaa/mattermost-voting-bot/internal/storage"
 	"log/slog"
 	"os"
 )
@@ -19,9 +21,22 @@ func main() {
 
 	log := setupLogger(cfg.Env)
 
-	log.Info("starting url-shortener", slog.String("env", cfg.Env))
+	log.Info("starting mattermost-voting-bot", slog.String("env", cfg.Env))
 
 	log.Debug("debug messages are enabled")
+
+	storage, err := storage.New(cfg)
+	if err != nil {
+		log.Error("error creating storage", err)
+		os.Exit(1)
+	}
+
+	bot, err := bot.New(cfg, storage, log)
+	if err != nil {
+		log.Error("error creating bot", err)
+	}
+
+	bot.Run()
 }
 
 func setupLogger(env string) *slog.Logger {
