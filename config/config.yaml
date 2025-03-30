@@ -1,5 +1,4 @@
 env: "local" # local, dev, prod
-address: "localhost:8080"
 tarantool_address: "tarantool:3301"
 mattermost_url: "http://mattermost:8065"
 bot_token: "n7gm3qbyz7ykb8h34sunau8bfo"
