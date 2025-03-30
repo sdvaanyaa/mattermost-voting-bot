@@ -1,0 +1,86 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      POSTGRES_USER: mmuser
+      POSTGRES_PASSWORD: mmuser_password
+      POSTGRES_DB: mattermost
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mmuser -d mattermost"]
+      interval: 2s
+      timeout: 1s
+      retries: 5
+    restart: unless-stopped
+
+  mattermost:
+    image: mattermost/mattermost-team-edition:latest
+    container_name: mattermost
+    ports:
+      - "8065:8065"
+    environment:
+      MM_SQLSETTINGS_DRIVERNAME: postgres
+      MM_SQLSETTINGS_DATASOURCE: "postgres://mmuser:mmuser_password@postgres:5432/mattermost?sslmode=disable"
+      MM_SERVICESETTINGS_SITEURL: "http://localhost:8065"
+    volumes:
+      - mattermost_data:/mattermost/data
+      - mattermost_config:/mattermost/config
+    networks:
+      - app-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8065"]
+      interval: 5s
+      timeout: 1s
+      retries: 3
+    restart: unless-stopped
+
+  tarantool:
+    image: tarantool/tarantool:2.10
+    container_name: tarantool
+    ports:
+      - "3301:3301"
+    volumes:
+      - tarantool_data:/var/lib/tarantool
+      - ./tarantool_init.lua:/opt/tarantool/init.lua
+    command: tarantool /opt/tarantool/init.lua
+    networks:
+      - app-network
+    # Временно убираем healthcheck
+    restart: unless-stopped
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mattermost-voting-bot
+    environment:
+      - TARANTOOL_ADDRESS=tarantool:3301
+      - MATTERMOST_URL=http://mattermost:8065
+      - BOT_TOKEN=n7gm3qbyz7ykb8h34sunau8bfo
+    networks:
+      - app-network
+    depends_on:
+      mattermost:
+        condition: service_healthy
+      tarantool:
+        condition: service_started # Убираем зависимость от healthcheck
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  mattermost_data:
+  mattermost_config:
+  tarantool_data:
