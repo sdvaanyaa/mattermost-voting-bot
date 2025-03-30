@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/sdvaanyaa/mattermost-voting-bot/intertnal/config"
+	"github.com/sdvaanyaa/mattermost-voting-bot/internal/config"
 	"log/slog"
 	"os"
 )
